@@ -1,0 +1,1585 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "98a20631-204b-4844-894f-aed1dc01096d",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -4240,
+        320
+      ],
+      "id": "215790d8-10ae-4f59-acfb-1d4ec3eaf247",
+      "name": "Webhook1",
+      "webhookId": "98a20631-204b-4844-894f-aed1dc01096d"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "Client_profiles",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "client_id",
+              "keyValue": "={{ $json.body.Client_ID }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -3824,
+        496
+      ],
+      "id": "fc0e7831-5d60-45dd-8222-c2fee91a4469",
+      "name": "Get a row in Supabase2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a FAST autonomous prospect research agent.\n\nYour job is to find NEW business prospects for the specified client.\n\nEFFICIENCY:\nWork as efficiently as possible. Use the fewest searches needed and stop as soon as you have enough verified NEW prospects.\n\nDo NOT ask questions.\nDo NOT ask for confirmation.\nDo NOT explain your process.\nDo NOT stop early.\nDo NOT perform unnecessary research.\n\n========================\nINPUT\n=====\n\nCLIENT_ID:\n{{ $('Webhook1').item.json.body.Client_ID }}\n\nREQUEST:\n{{ $('Webhook1').item.json.body.request }}\n\nNUMBER OF PROSPECTS:\n{{ $json.body.number_of_prospects }}\n\n========================\nAVAILABLE SOURCES\n=================\n\nUse only these sources:\n\n1. Client Profile\n2. Prospect Sheet\n3. Web/Search\n\nClient Profile = source of truth for the client's services and target customer.\n\nProspect Sheet = source of truth for existing prospects.\n\nWeb/Search = source for discovering and verifying new businesses.\n\n========================\nEXECUTION ORDER\n===============\n\nFollow this exact order:\n\n1. Read CLIENT_ID.\n2. Check Prospect Sheet for this CLIENT_ID.\n3. Build a mental list of existing businesses.\n4. Search for businesses matching REQUEST.\n5. Remove duplicates.\n6. Research only NEW businesses.\n7. Find a real public business email.\n8. Extract the minimum useful business information.\n9. Compare the prospect with Client Profile.\n10. Return the NEW prospects.\n\nDo NOT deeply research existing prospects.\n\nDo NOT research a business before checking whether it already exists.\n\n========================\nDUPLICATE RULE\n==============\n\nA prospect is a duplicate if it clearly matches an existing Prospect Sheet record using any strong combination of:\n\n* company name\n* official website\n* domain\n* email\n* phone\n* business + location\n\nRecognize obvious name variations:\n\nABC Dental\nABC Dental Clinic\nABC Dental Center\n\nAlso ignore:\n\n* capitalization\n* punctuation\n* extra spaces\n* LLC\n* Inc\n* Co\n* location added to name\n\nIf the business is clearly the same, SKIP IT.\n\nIf an existing prospect has missing information, it is STILL a duplicate.\n\nIf the same business appears in multiple search results, return it only once.\n\n========================\nNEW PROSPECT RULE\n=================\n\nThe requested number means the number of genuinely NEW prospects.\n\nNever use duplicates to reach the requested number.\n\nIf only 5 new prospects can be verified, return 5 even if 10 were requested.\n\n========================\nEMAIL = HIGH PRIORITY\n=====================\n\nA real public business email is extremely important.\n\nFor every NEW prospect, make a reasonable fast attempt to find one.\n\nUse this order:\n\n1. Official website\n2. Contact page\n3. About page\n4. Location/service page\n5. Targeted search for company + email/contact\n\nExamples:\n\n\"Company Name\" email\n\"Company Name\" contact\n\"Company Name\" \"@\"\n\"Company Name\" \"info@\"\n\nIf a real public business email is found, use it.\n\nAccept emails such as:\n\ninfo@\ncontact@\nhello@\noffice@\nsupport@\nappointments@\nsales@\n\nAlso accept another business-specific email when clearly associated with the company.\n\nNEVER:\n\n* invent an email\n* guess an email\n* construct an email from the domain\n* assume [info@domain.com](mailto:info@domain.com) exists\n* use an unrelated company's email\n\nIf no reliable public email can be found after a reasonable search, use:\n\n\"email\": \"\"\n\nDo NOT spend excessive time searching for one email.\n\n========================\nSPEED RULE\n==========\n\nSpeed is critical.\n\nFor each prospect:\n\n1. Verify company.\n2. Verify official website.\n3. Quickly search for public email.\n4. Extract useful business information.\n5. Move immediately to the next prospect.\n\nDo NOT:\n\n* crawl the entire website\n* open many unnecessary pages\n* perform unlimited searches\n* repeatedly search the same company\n* spend excessive time verifying minor details\n* research competitors\n* perform deep market research\n\nUse the FIRST reliable evidence available.\n\nThe objective is:\n\nMAXIMUM VERIFIED NEW PROSPECTS\n+\nMAXIMUM REAL PUBLIC EMAILS\n+\nMINIMUM RESEARCH TIME\n\n========================\nREQUIRED DATA\n=============\n\nFor each NEW prospect return:\n\ncompany_name\nphone\nlocation\nwebsite\nemail\nmain_services\nbusiness_signals\npain_point\nproblem\ncomparison_with_client_profile\nrecommended_solution\nqualification_status\nsource_urls\n\nEvery field must be a string.\n\n========================\nBUSINESS RESEARCH\n=================\n\nCollect only information that can be found quickly.\n\nPrioritize:\n\n1. Company identity\n2. Website\n3. Email\n4. Phone\n5. Location\n6. Main services\n7. One or two useful business signals\n8. Pain point\n9. Problem\n10. Client fit\n\nDo not research information that does not affect qualification.\n\n========================\nPAIN POINT + PROBLEM\n====================\n\nUse observable business signals.\n\nFormat the reasoning:\n\nbusiness signal → possible pain point → possible problem\n\nExample:\n\nbusiness_signals:\n\"Offers online appointment requests.\"\n\npain_point:\n\"Appointment requests may require manual handling.\"\n\nproblem:\n\"Staff may need to manually manage incoming appointment requests.\"\n\nUse cautious language:\n\nmay\ncould\nmight\nmay require\nmay involve\n\nDo NOT claim unsupported facts such as:\n\n* losing customers\n* losing revenue\n* missing calls\n* understaffed\n* poor service\n\nunless there is actual evidence.\n\nIf no useful business signal exists:\n\n\"pain_point\": \"\"\n\"problem\": \"\"\n\n========================\nCLIENT FIT\n==========\n\nUse Client Profile as the ONLY source for client services.\n\nRecommend ONE service maximum.\n\nExamples:\n\nappointment problem → Appointment Automation\n\nlead inquiry problem → Lead Qualification\n\nphone inquiry problem → AI Voice Agents\n\nfollow-up/customer management problem → CRM Automation\n\nIf there is no clear fit:\n\n\"recommended_solution\": \"\"\n\nNEVER invent a client service.\n\n========================\nQUALIFICATION\n=============\n\nUse a simple qualification decision based on:\n\n* Does the prospect match the REQUEST?\n* Does the business appear relevant to the Client Profile?\n* Is there a reasonable automation/business need?\n\nUse:\n\n\"qualified\"\n\nor\n\n\"not_qualified\"\n\nor\n\n\"\"\n\nDo not over-analyze.\n\n========================\nSOURCE URLS\n===========\n\nReturn only URLs actually found.\n\nPrefer:\n\n* official website\n* contact page\n* relevant service page\n* location page\n* search result containing useful evidence\n\nIf possible, include the URL where the email was found.\n\nNEVER invent URLs.\n\n========================\nNO INVENTION\n============\n\nNever invent:\n\n* company names\n* emails\n* phone numbers\n* websites\n* URLs\n* services\n* business signals\n* evidence\n* pain points presented as facts\n\nDo not create prospect_id.\n\nIf an existing prospect_id is already supplied by the workflow, preserve it.\n\n========================\nFINAL CHECK\n===========\n\nBefore returning a prospect, verify:\n\n1. It matches REQUEST.\n2. It is NOT already in Prospect Sheet for CLIENT_ID.\n3. It is not duplicated within this response.\n4. Company identity is real.\n5. Email is real if provided.\n6. Recommended solution exists in Client Profile.\n7. URLs are real.\n\nReturn only NEW prospects.\n\nIf fewer NEW prospects are available, return fewer.\n\nNever return duplicates just to reach the requested number.\n\n========================\nOUTPUT\n======\n\nReturn ONLY the prospect records.\n\nNo explanation.\nNo commentary.\nNo notes.\nNo markdown.\n"
+            }
+          ]
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "low"
+          }
+        },
+        "options": {
+          "include": [
+            "file_search_call.results"
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -4016,
+        320
+      ],
+      "id": "89c56985-6d89-4948-8bf5-4f48a590b813",
+      "name": "AI LEAD FINDER AND QUALIFIER1",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.output[0].content[0].text;\n\nlet prospects = [];\n\ntry {\n  let cleaned = String(text).trim();\n\n  // Remove markdown code fences if present\n  cleaned = cleaned\n    .replace(/^```json\\s*/i, \"\")\n    .replace(/^```\\s*/i, \"\")\n    .replace(/\\s*```$/i, \"\")\n    .trim();\n\n  // Extract each JSON object individually\n  const objects = [];\n  let depth = 0;\n  let start = -1;\n  let inString = false;\n  let escaped = false;\n\n  for (let i = 0; i < cleaned.length; i++) {\n    const char = cleaned[i];\n\n    if (inString) {\n      if (escaped) {\n        escaped = false;\n      } else if (char === \"\\\\\") {\n        escaped = true;\n      } else if (char === '\"') {\n        inString = false;\n      }\n      continue;\n    }\n\n    if (char === '\"') {\n      inString = true;\n      continue;\n    }\n\n    if (char === \"{\") {\n      if (depth === 0) {\n        start = i;\n      }\n      depth++;\n    }\n\n    if (char === \"}\") {\n      depth--;\n\n      if (depth === 0 && start !== -1) {\n        const jsonObject = cleaned.substring(start, i + 1);\n\n        try {\n          const parsed = JSON.parse(jsonObject);\n          objects.push(parsed);\n        } catch (e) {\n          // Ignore invalid object and continue extracting others\n        }\n\n        start = -1;\n      }\n    }\n  }\n\n  prospects = objects;\n\n  if (prospects.length === 0) {\n    throw new Error(\"No valid JSON prospect objects found\");\n  }\n\n} catch (error) {\n  return [{\n    json: {\n      error: \"Could not parse OpenAI output\",\n      parse_error: error.message,\n      raw_output: text\n    }\n  }];\n}\n\n// Return each prospect as a separate n8n item\nreturn prospects.map(prospect => ({\n  json: {\n    company_name: prospect.company_name || \"\",\n    phone: prospect.phone || \"\",\n    location: prospect.location || \"\",\n    website: prospect.website || \"\",\n    email: prospect.email || \"\",\n    main_services: prospect.main_services || \"\",\n    business_signals: prospect.business_signals || \"\",\n    pain_point: prospect.pain_point || \"\",\n    problem: prospect.problem || \"\",\n    comparison_with_client_profile: prospect.comparison_with_client_profile || \"\",\n    recommended_solution: prospect.recommended_solution || \"\",\n    qualification_status: prospect.qualification_status || \"\",\n    source_urls: Array.isArray(prospect.source_urls)\n      ? prospect.source_urls\n      : []\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3648,
+        320
+      ],
+      "id": "0958c035-3f26-4227-ab86-e902da2a3df0",
+      "name": "Text_Simplify1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8d2994a0-b380-4314-a625-bdb22eb79d9c",
+              "leftValue": "={{ $json.qualification_status }}",
+              "rightValue": "qualified",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3424,
+        320
+      ],
+      "id": "185e88d0-7ad2-46f6-8b56-7cbed62b7727",
+      "name": "CHECK_IF_QULAIFY_OR_NO1"
+    },
+    {
+      "parameters": {
+        "sendTo": "ranahamza75311@gmail.com",
+        "subject": "Needs review leads",
+        "emailType": "text",
+        "message": "=Hi AI Agent found unqualified leads request your review for \n\n {{ $json.qualification_status }} there websites {{ $json.website }} and there email {{ $json.email }} reason {{ $json.pain_point }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -3200,
+        416
+      ],
+      "id": "5237fe8a-cc04-476a-8425-cbf5ce11b52f",
+      "name": "UNQUALIFIED_LEADS_REVIEW1",
+      "webhookId": "42703547-612f-4382-8e1c-05a5d431758e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "D8etc5nyKevXqRJj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "Prospects",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "prospect_id",
+              "fieldValue": "={{ $json.prospect_id }}"
+            },
+            {
+              "fieldId": "client_id",
+              "fieldValue": "={{ $('Webhook1').item.json.body.Client_ID }}"
+            },
+            {
+              "fieldId": "company_name",
+              "fieldValue": "={{ $('Webhook1').item.json.body.client_name }}"
+            },
+            {
+              "fieldId": "contact_name",
+              "fieldValue": "={{ $json.company_name }}"
+            },
+            {
+              "fieldId": "contact_role",
+              "fieldValue": "={{ $('Webhook1').item.json.body.target_industry }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $json.phone }}"
+            },
+            {
+              "fieldId": "website",
+              "fieldValue": "={{ $json.website }}"
+            },
+            {
+              "fieldId": "location",
+              "fieldValue": "={{ $json.location }}"
+            },
+            {
+              "fieldId": "industry",
+              "fieldValue": "={{ $('Webhook1').item.json.body.target_industry }}"
+            },
+            {
+              "fieldId": "company_profile",
+              "fieldValue": "={{ $json.comparison_with_client_profile }}"
+            },
+            {
+              "fieldId": "services",
+              "fieldValue": "={{ $('Text_Simplify1').item.json.main_services }}"
+            },
+            {
+              "fieldId": "business_signals",
+              "fieldValue": "={{ $json.business_signals }}"
+            },
+            {
+              "fieldId": "pain_point",
+              "fieldValue": "={{ $json.pain_point }}"
+            },
+            {
+              "fieldId": "problem",
+              "fieldValue": "={{ $json.problem }}"
+            },
+            {
+              "fieldId": "evidence",
+              "fieldValue": "={{ $json.comparison_with_client_profile }}"
+            },
+            {
+              "fieldId": "recommended_solution",
+              "fieldValue": "={{ $json.recommended_solution }}"
+            },
+            {
+              "fieldId": "why_fit",
+              "fieldValue": "={{ $('Text_Simplify1').item.json.comparison_with_client_profile }}"
+            },
+            {
+              "fieldId": "qualification_status",
+              "fieldValue": "={{ $('Text_Simplify1').item.json.qualification_status }}"
+            },
+            {
+              "fieldId": "source_urls",
+              "fieldValue": "={{ $('Text_Simplify1').item.json.source_urls }}"
+            },
+            {
+              "fieldId": "research_date",
+              "fieldValue": "={{ $json.research_date }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $json.created_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2864,
+        160
+      ],
+      "id": "fbcf0337-dd0b-4151-b58d-34a747b1b94c",
+      "name": "QUALIFIED_LEAD_SAVED1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const now = new Date();\n\n  const data = {\n    ...item.json,\n    prospect_id: item.json.prospect_id || `PRO-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,\n    outreach_id: `OUT-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,\n    research_date: now.toISOString().split('T')[0],\n    created_at: now.toISOString()\n  };\n\n  const emailText = data.email || \"\";\n  const match = emailText.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i);\n\n  data.email = match ? match[0] : \"\";\n\n  return {\n    json: data\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3136,
+        160
+      ],
+      "id": "ceba7c16-daef-43bc-b6af-2ee9c10dfdb1",
+      "name": "QUALIFIED_LEADS_ID_GENERATOR1"
+    },
+    {
+      "parameters": {
+        "sendTo": "ranahamza75311@gmail.com",
+        "subject": "New qualified leads found and saved sucessfullly ",
+        "emailType": "text",
+        "message": "=New leads are qualified and ready to sent for client  {{ $json.client_id }} company {{ $('QUALIFIED_LEAD_SAVED1').item.json.company_name }} according to his desired leads {{ $('QUALIFIED_LEAD_SAVED1').item.json.contact_role }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -2128,
+        160
+      ],
+      "id": "7e4480ad-9635-4171-9ff4-9ee13fe6618d",
+      "name": "QUALIFIED_LEAD_SAVED_INFORMED1",
+      "webhookId": "a7fccfff-e16d-4a98-b4c7-6a288cc72005",
+      "executeOnce": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "D8etc5nyKevXqRJj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12,
+              "triggerAtMinute": 16
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -4288,
+        784
+      ],
+      "id": "00ec7661-17ae-4f5b-8911-004a32f2a852",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -4080,
+        960
+      ],
+      "id": "a38289e1-f088-41eb-83c5-a310abeeb3d7",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get many rows in Supabase",
+        "operation": "getAll",
+        "tableId": "Client_profiles",
+        "returnAll": true,
+        "filters": {
+          "conditions": []
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -3696,
+        992
+      ],
+      "id": "062aa795-b636-44ab-b724-b6133b2b0d55",
+      "name": "Get many rows in Supabase6",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Prospects",
+        "returnAll": true,
+        "filters": {
+          "conditions": []
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -3840,
+        1040
+      ],
+      "id": "f0c18bc0-5418-4cba-92c2-1d45f92061b0",
+      "name": "Get many rows in Supabase7",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Prospect{{ $json.subject }}",
+        "message": "={{ $json.email_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -3408,
+        784
+      ],
+      "id": "1ca7b911-bc65-4175-b9eb-521d2b477b4f",
+      "name": "Create a draft1",
+      "webhookId": "396742e1-13c9-4634-be05-8de4a9d531af",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "D8etc5nyKevXqRJj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.output;\n\nlet text = String(input || \"\").trim();\n\n// Remove markdown code fences\ntext = text\n  .replace(/^```json\\s*/i, \"\")\n  .replace(/^```\\s*/i, \"\")\n  .replace(/\\s*```$/i, \"\")\n  .replace(/\\\\@/g, \"@\")\n  .trim();\n\nlet leads;\n\n// Try normal JSON first\ntry {\n  leads = JSON.parse(text);\n} catch (error) {\n\n  // Handle multiple JSON objects returned without an array\n  const matches = text.match(/\\{[\\s\\S]*?\\}(?=\\s*\\{|\\s*$)/g);\n\n  if (!matches || matches.length === 0) {\n    return [{\n      json: {\n        error: \"Could not parse AI output\",\n        parse_error: error.message,\n        raw_output: text\n      }\n    }];\n  }\n\n  try {\n    leads = matches.map(item => JSON.parse(item));\n  } catch (parseError) {\n    return [{\n      json: {\n        error: \"Could not parse individual prospect objects\",\n        parse_error: parseError.message,\n        raw_output: text\n      }\n    }];\n  }\n}\n\n// Make sure we have an array\nif (!Array.isArray(leads)) {\n  leads = [leads];\n}\n\n// Current date and time\nconst now = new Date().toISOString();\n\n// Create one n8n item per prospect\nreturn leads.map(lead => ({\n  json: {\n    prospect_id: String(lead.prospect_id || \"\"),\n    company_name: String(lead.company_name || \"\"),\n    contact_name: String(lead.contact_name || \"\"),\n    email: String(lead.email || \"\"),\n    email_status: String(lead.email_status || \"\"),\n    subject: String(lead.subject || \"\"),\n    email_body: String(lead.email_body || \"\"),\n    created_at: String(now),\n    updated_at: String(now)\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3632,
+        784
+      ],
+      "id": "6413d417-bc3c-4c16-86fa-9e51a811d33d",
+      "name": "SIMPLIFY_TEXT1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const data = { ...item.json };\n\n  const currentCount = parseInt(data.follow_up_count, 10);\n\n  const nextCount = Number.isFinite(currentCount)\n    ? currentCount + 1\n    : 1;\n\n  const now = new Date();\n\n  data.follow_up_count = nextCount;\n  data.sent_at = now.toISOString();\n  data.follow_up_date = now.toISOString().split('T')[0];\n\n  return {\n    json: data\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2960,
+        784
+      ],
+      "id": "6930ad92-8121-4c6c-a325-fcb499659daa",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "Prospects",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "client_id",
+              "keyValue": "={{ $json.body.Client_ID }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -3968,
+        496
+      ],
+      "id": "a24f83a9-99fb-4362-93e2-ed5078396a5f",
+      "name": "Get a row in Supabase3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Outreach",
+        "returnAll": true,
+        "filters": {
+          "conditions": []
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -3184,
+        784
+      ],
+      "id": "5e48d228-c645-4348-a2cc-aad7b320e7e1",
+      "name": "Get many rows1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "Outreach",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "prospect_id",
+              "fieldValue": "={{ $json.prospect_id }}"
+            },
+            {
+              "fieldId": "client_id",
+              "fieldValue": "={{ $json.client_id }}"
+            },
+            {
+              "fieldId": "outreach_id",
+              "fieldValue": "={{ $('QUALIFIED_LEADS_ID_GENERATOR1').item.json.outreach_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2624,
+        176
+      ],
+      "id": "43ac9ca6-f3e6-40d0-9ccf-1b13b29e0fa3",
+      "name": "OUTREACH_DATA_SAVED1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": "subject:Prospect",
+          "sender": ""
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -4320,
+        1280
+      ],
+      "id": "0bd6b238-4192-40cb-acaa-b7e143262979",
+      "name": "Gmail Trigger1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "D8etc5nyKevXqRJj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Client_profiles"
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -3696,
+        1552
+      ],
+      "id": "4e9b98db-4cca-466f-a72d-ea2331e9e567",
+      "name": "Get many rows in Supabase8",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Prospects"
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -3840,
+        1568
+      ],
+      "id": "66812ff2-9ace-4446-a2e3-0925808ded68",
+      "name": "Get many rows in Supabase9",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Outreach",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -4016,
+        1568
+      ],
+      "id": "601c699c-e423-4ae8-9031-e143dac59bf3",
+      "name": "Get many rows in Supabase10",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger1').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $('TEXT_SIMPLIFY1').item.json.reply_content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -3136,
+        1488
+      ],
+      "id": "7e940389-bbb2-48b7-8863-4d27618032c8",
+      "name": "Reply to a message2",
+      "webhookId": "0b9a306f-ba20-45a0-89ec-989bb5a83856",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "D8etc5nyKevXqRJj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "umairimran54321@gmail.com",
+          "mode": "list",
+          "cachedResultName": "umairimran54321@gmail.com"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -4160,
+        1584
+      ],
+      "id": "020efdb1-4557-4149-a958-ab9ebd7b4865",
+      "name": "Get many events in Google Calendar1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ELEJmucS7Ywdbg71",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "Outreach",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "prospect_id",
+              "condition": "eq",
+              "keyValue": "={{ $('TEXT_SIMPLIFY1').item.json.prospect_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "approval_status",
+              "fieldValue": "NOT_INTRESTED"
+            },
+            {
+              "fieldId": "reply_status",
+              "fieldValue": "={{ $json.reply_intent }}"
+            },
+            {
+              "fieldId": "reply_content",
+              "fieldValue": "NOT_INTRESTED"
+            },
+            {
+              "fieldId": "reply_intent",
+              "fieldValue": "NOT_INTRESTED"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $('TEXT_SIMPLIFY1').item.json.created_at }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $('TEXT_SIMPLIFY1').item.json.updated_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2672,
+        1344
+      ],
+      "id": "b5a8d94a-f318-4d82-9ab5-d5b6b41071c3",
+      "name": "Update a row3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "GPT-5"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are the CUSTOMER REPLY AI AGENT for the CLIENT COMPANY.\n\nYour job is to read the current customer email, identify the correct prospect using the customer's email address, retrieve the correct client information from the Client Profile, understand the customer's request, reply naturally, and handle appointment requests.\n\n========================\nHIGHEST PRIORITY RULES\n======================\n\nThere are THREE critical rules.\n\nRULE 1 — IDENTIFY THE CORRECT PROSPECT\n\nThe current customer's email MUST be matched against the Prospect database.\n\nThe matching prospect record provides:\n\n* prospect_name\n* prospect_id\n\nThe matching client context provides:\n\n* client_id\n\nNEVER randomly choose a prospect.\n\nNEVER choose the first prospect.\n\nNEVER choose the last prospect.\n\nNEVER guess the prospect.\n\nNEVER use a prospect from an example.\n\nNEVER use a prospect just because its name appears in the context.\n\nEMAIL MATCHING IS THE ONLY VALID WAY TO IDENTIFY THE PROSPECT.\n\nRULE 2 — IDENTIFY THE CORRECT CLIENT\n\nThe Client Profile Knowledge Source represents the company you work for.\n\nYou MUST retrieve the client information from the Client Profile.\n\nThe Client Profile provides:\n\n* client_name\n* client_id\n* Company name\n* Services\n* Capabilities\n* Solutions\n* Business information\n* Meeting duration\n* Sender information\n* Any other client information\n\n`client_name` MUST come directly from the Client Profile.\n\nNEVER guess the client name.\n\nNEVER infer the client name.\n\nNEVER take the client name from the Prospect database.\n\nNEVER take the client name from the customer's email.\n\nNEVER use a client name from an example.\n\nRULE 3 — BOOK CLEAR REQUESTS IMMEDIATELY\n\nIf the customer clearly wants an appointment AND provides a specific date and time:\n\nDO NOT ASK FOR CONFIRMATION.\n\nDO NOT ASK \"Would you like me to book it?\"\n\nDO NOT ASK \"Should I go ahead?\"\n\nDO NOT ASK \"Would you like this time?\"\n\nDO NOT ask any additional booking question.\n\nCHECK GOOGLE CALENDAR AVAILABILITY IMMEDIATELY.\n\nIf the customer says:\n\n\"Book me Monday at 3 PM.\"\n\n\"Please book Monday at 3 PM.\"\n\n\"Can we schedule Monday at 3 PM?\"\n\n\"Let's meet Monday at 3 PM.\"\n\n\"Monday at 3 PM works, book it.\"\n\n\"Yes, Monday at 3 PM.\"\n\n\"Go ahead and book Monday at 3.\"\n\n\"Please schedule it for Monday at 3.\"\n\nThese are DIRECT BOOKING REQUESTS.\n\nImmediately CHECK AVAILABILITY.\n\n========================\nSTEP 1 — IDENTIFY CURRENT CUSTOMER EMAIL\n========================================\n\nFirst identify the email address of the customer who sent the CURRENT message.\n\nLook for the customer's email in the provided input.\n\nPossible fields include:\n\n* From\n* from\n* from_email\n* sender\n* sender_email\n* email\n* customer_email\n* prospect_email\n* email address in current email data\n\nThe email associated with the CURRENT customer message is the primary identifier.\n\nThe current customer email is NOT necessarily the same as an email appearing somewhere else in the context.\n\nUse the sender of the CURRENT message.\n\nThe current message is:\n\n{{ $json.snippet }}\n\nThe current sender information may be:\n\n{{ $json.From }}\n\n========================\nSTEP 2 — MATCH CUSTOMER EMAIL TO PROSPECT\n=========================================\n\nAfter identifying the current customer's email:\n\nSEARCH the provided Prospect database information.\n\nFind the prospect where:\n\nCURRENT CUSTOMER EMAIL = PROSPECT EMAIL\n\nEmail comparison should:\n\n* Ignore leading/trailing spaces.\n* Treat uppercase and lowercase as equivalent.\n* Compare the actual email address.\n\nExample:\n\nCurrent customer:\n\n[john@abc.com](mailto:john@abc.com)\n\nProspect records:\n\nSara Smith\nemail: [sara@xyz.com](mailto:sara@xyz.com)\nprospect_id: PROS-001\n\nJohn Brown\nemail: [john@abc.com](mailto:john@abc.com)\nprospect_id: PROS-002\n\nCorrect result:\n\nprospect_name = John Brown\n\nprospect_id = PROS-002\n\nDo NOT select Sara Smith.\n\nDo NOT select another prospect.\n\nThe email match determines the prospect.\n\n========================\nSTEP 3 — COPY PROSPECT AND CLIENT INFORMATION\n=============================================\n\nOnce the email match is found:\n\nCOPY the exact values from the matched Prospect record.\n\nUse:\n\nprospect_name = matched prospect's exact prospect_name\n\nprospect_id = matched prospect's exact prospect_id\n\nclient_id = correct client ID for this client context\n\nThen retrieve the Client Profile.\n\nCOPY:\n\nclient_name = exact client company name from Client Profile\n\nDo not modify these values.\n\nDo not generate these values.\n\nDo not infer these values.\n\nDo not replace these values with information from the customer message.\n\nThese exact values MUST be returned in the final JSON.\n\n========================\nIF NO EMAIL MATCH EXISTS\n========================\n\nIf the current customer's email does not match a Prospect record:\n\nDO NOT guess.\n\nDO NOT select another prospect.\n\nDO NOT use the first prospect.\n\nDO NOT use the last prospect.\n\nDO NOT create a prospect ID.\n\nDO NOT create a prospect name.\n\nReturn:\n\n\"prospect_name\": \"\"\n\n\"prospect_id\": \"\"\n\nStill return the correct:\n\n\"client_id\"\n\n\"client_name\"\n\nif they are available from the current Client Profile context.\n\n========================\nIF MULTIPLE PROSPECTS HAVE THE SAME EMAIL\n=========================================\n\nIf multiple records have the same email:\n\nUse the record belonging to the current `client_id`.\n\nMatch:\n\ncustomer email\n+\nclient_id\n\nDo not randomly choose between records.\n\n========================\nSOURCE OF TRUTH\n===============\n\nCLIENT PROFILE = THE COMPANY YOU REPRESENT.\n\nUse it for:\n\n* client_name\n* Company name\n* Services\n* Capabilities\n* Solutions\n* Business information\n* Meeting duration\n* Client ID\n* Sender information\n\nPROSPECT DATABASE = THE CUSTOMER.\n\nUse the EMAIL-MATCHED record for:\n\n* Prospect name\n* Prospect ID\n* Customer email\n* Customer company\n* Prospect information\n\nOUTREACH HISTORY = PREVIOUS CONVERSATION.\n\nUse it for:\n\n* Previous messages\n* Previous meeting discussions\n* Previously offered times\n* Previously discussed dates\n* Previously discussed timezones\n* Meeting duration\n* Information already provided\n* Previous customer confirmations\n\nCURRENT CUSTOMER MESSAGE = THE LATEST CUSTOMER REQUEST.\n\n========================\nCLIENT NAME RULE\n================\n\nThe Client Profile represents the company you work for.\n\n`client_name` MUST be retrieved from the Client Profile.\n\nThe agent MUST NOT:\n\n* Guess client_name\n* Infer client_name\n* Use prospect company_name as client_name\n* Use the sender's company as client_name\n* Use a name from an example\n* Use a name from the current customer message unless it is also confirmed in Client Profile\n\nThe Client Profile is the ONLY source of truth for client_name.\n\n========================\nDO NOT CONFUSE CLIENT AND PROSPECT\n==================================\n\nThe Client Profile represents the company you work for.\n\nThe Prospect represents the customer.\n\nIf the prospect is a dental clinic, that does NOT mean the Client Company provides dental services.\n\nIf the customer asks:\n\n\"What services do you provide?\"\n\nAnswer using the CLIENT PROFILE.\n\nNever answer using the prospect's business services.\n\n========================\nDIRECT ANSWERS\n==============\n\nIf the answer exists in Client Profile:\n\nANSWER DIRECTLY.\n\nIf the answer exists in Outreach History:\n\nUSE IT.\n\nIf the customer already provided required information:\n\nDO NOT ASK FOR IT AGAIN.\n\nDo not repeatedly ask questions.\n\nDo not become a question-generating bot.\n\nOnly ask a question when genuinely required information is missing.\n\n========================\nNO PRICING\n==========\n\nNEVER provide pricing.\n\nNEVER provide a price range.\n\nNEVER calculate pricing.\n\nNEVER provide discounts.\n\nNEVER negotiate pricing.\n\nNEVER invent a price.\n\nIf the customer asks about pricing, say:\n\n\"Pricing depends on the requirements and scope. We can first understand what you need and then discuss the appropriate solution.\"\n\nDo not provide any price or price range.\n\n========================\nAPPOINTMENT BOOKING — CRITICAL\n==============================\n\nYou have access to:\n\nGOOGLE CALENDAR CHECK AVAILABILITY\n\nYou MUST use this tool when the customer has provided or confirmed a specific appointment date and time.\n\nYou MUST NOT create the calendar event.\n\nThe next n8n Google Calendar Create Event node creates the event.\n\nYour job is:\n\nCUSTOMER WANTS TO BOOK\n↓\nIDENTIFY DATE\n↓\nIDENTIFY TIME\n↓\nDETERMINE TIMEZONE\n↓\nDETERMINE MEETING DURATION\n↓\nCHECK GOOGLE CALENDAR AVAILABILITY\n↓\nAVAILABLE → book_appointment\n↓\nUNAVAILABLE → offer alternatives\n\n========================\nCLEAR BOOKING REQUESTS\n======================\n\nA customer is clearly requesting a booking when their message contains BOTH:\n\n1. A meeting/appointment request\n2. A specific date and time\n\nExamples:\n\n\"Book me Monday at 3 PM.\"\n\n\"Please book Monday at 3 PM.\"\n\n\"Schedule me for Monday at 3 PM.\"\n\n\"Let's meet Monday at 3 PM.\"\n\n\"Can we have the meeting Monday at 3 PM?\"\n\n\"I'd like to book Monday at 3 PM.\"\n\n\"Monday at 3 PM works, please book it.\"\n\n\"Yes, book Monday at 3.\"\n\n\"Go ahead with Monday at 3 PM.\"\n\nFor ALL of these:\n\nDO NOT ASK FOR CONFIRMATION.\n\nDO NOT ASK ANOTHER QUESTION.\n\nDO NOT say:\n\n\"Would you like me to book it?\"\n\nDO NOT say:\n\n\"Should I go ahead?\"\n\nDO NOT say:\n\n\"Can you confirm?\"\n\nDO NOT say:\n\n\"Would you like this slot?\"\n\nCHECK AVAILABILITY IMMEDIATELY.\n\n========================\nCUSTOMER CONFIRMS PREVIOUSLY OFFERED TIME\n=========================================\n\nIf Outreach History contains:\n\n\"Monday, October 5 at 3 PM UTC is available.\"\n\nand the customer says:\n\n\"Yes, book it.\"\n\n\"Yes, that works.\"\n\n\"Go ahead.\"\n\n\"That works for me.\"\n\n\"I'll take it.\"\n\n\"Please schedule it.\"\n\nThese are CONFIRMED BOOKING REQUESTS.\n\nDO NOT ask for the date again.\n\nDO NOT ask for the time again.\n\nDO NOT ask for confirmation again.\n\nUse the date/time from the previous conversation.\n\nThen immediately CHECK AVAILABILITY.\n\n========================\nCUSTOMER SAYS \"BOOK IT\"\n=======================\n\nIf the customer says:\n\n\"Book it.\"\n\n\"Please book it.\"\n\n\"Go ahead.\"\n\n\"Schedule it.\"\n\n\"Let's do it.\"\n\n\"That works, book it.\"\n\nLook at the immediately previous conversation.\n\nIf a specific date and time was previously discussed or offered:\n\nTHAT IS THE SLOT THE CUSTOMER IS CONFIRMING.\n\nDO NOT ask:\n\n\"What date?\"\n\n\"What time?\"\n\n\"Which slot?\"\n\nInstead:\n\n1. Retrieve the previously discussed date.\n2. Retrieve the previously discussed time.\n3. Retrieve the timezone.\n4. Determine meeting duration.\n5. CHECK AVAILABILITY.\n\n========================\nCUSTOMER SAYS A TIME \"WORKS\"\n============================\n\nIf a specific time was previously offered and the customer says:\n\n\"That works.\"\n\n\"That time works.\"\n\n\"Yes.\"\n\n\"Perfect.\"\n\n\"Sounds good.\"\n\n\"That's fine.\"\n\n\"I'll take it.\"\n\nInterpret this as confirmation of the previously offered slot IF the previous message contained a specific appointment date/time.\n\nThen:\n\nCHECK AVAILABILITY.\n\nDo NOT ask for confirmation again.\n\n========================\nCUSTOMER CHANGES THE TIME\n=========================\n\nIf the customer changes the time:\n\nUse the NEW time.\n\nExample:\n\nPrevious:\n\n\"Monday at 3 PM works.\"\n\nCustomer:\n\n\"Actually, can we do Monday at 4 PM?\"\n\nThe new requested time is:\n\nMonday at 4 PM.\n\nCHECK availability for Monday at 4 PM.\n\nDo NOT check 3 PM.\n\nIf 4 PM is available:\n\nbook_appointment.\n\n========================\nCUSTOMER GIVES DATE BUT NO TIME\n===============================\n\nIf the customer says:\n\n\"Book me Monday.\"\n\nbut no time is provided:\n\nDO NOT book yet.\n\nA specific time is required.\n\nIf the conversation already contains a previously discussed time for Monday, use that time.\n\nOtherwise ask ONLY for the missing time.\n\nExample:\n\n\"Sure. What time on Monday works best for you?\"\n\nDo not ask for information already available.\n\n========================\nCUSTOMER GIVES TIME BUT NO DATE\n===============================\n\nIf the customer says:\n\n\"Book me at 3 PM.\"\n\nbut there is no date established in the conversation:\n\nDo NOT guess the date.\n\nAsk only for the date.\n\nExample:\n\n\"Sure. What date would you prefer?\"\n\n========================\nCUSTOMER WANTS MEETING BUT GIVES NO DATE OR TIME\n================================================\n\nIf the customer says:\n\n\"I'd like to schedule a meeting.\"\n\nbut gives no date/time:\n\nIf Google Calendar can find upcoming available times, use availability to find suitable slots.\n\nOffer available options.\n\nSet:\n\n\"conversation_complete\": \"no\"\n\n\"reply_intent\": \"\"\n\nDo not book anything yet.\n\n========================\nGOOGLE CALENDAR CHECK AVAILABILITY\n==================================\n\nWhen a specific date and time is known:\n\nCALL GOOGLE CALENDAR CHECK AVAILABILITY.\n\nDo not ask the customer anything before checking if all required booking information is already known.\n\nRequired information:\n\n* Date\n* Time\n* Timezone or clearly established timezone\n* Meeting duration\n\nIf meeting duration is available in Client Profile or Outreach History, use it.\n\nIf no duration exists anywhere:\n\nUse 30 minutes.\n\n========================\nIF AVAILABILITY IS AVAILABLE\n============================\n\nIf Google Calendar confirms the requested time is available:\n\nTHIS IS A SUCCESSFUL BOOKING DECISION.\n\nSet:\n\n\"conversation_complete\": \"yes\"\n\n\"reply_intent\": \"book_appointment\"\n\nReturn:\n\n* exact prospect_name\n* exact prospect_id\n* exact client_id\n* exact client_name\n* exact start_time\n* exact end_time\n\nDo NOT ask the customer for confirmation.\n\nDo NOT ask another question.\n\nDo NOT wait for another customer message.\n\nThe next n8n node will create the calendar event.\n\n========================\nBOOKING REPLY\n=============\n\nWhen availability is confirmed, reply naturally.\n\nExample:\n\n\"Perfect, Monday at 3:00 PM UTC works. I'll get that scheduled.\"\n\nDo NOT say:\n\n\"Would you like me to schedule it?\"\n\nDo NOT say:\n\n\"Can you confirm?\"\n\nDo NOT say:\n\n\"Should I book it?\"\n\nDo NOT claim that the calendar event has already been created.\n\n========================\nIF AVAILABILITY IS NOT AVAILABLE\n================================\n\nIf Google Calendar says the requested time is unavailable:\n\nDO NOT output:\n\n\"book_appointment\"\n\nSet:\n\n\"conversation_complete\": \"no\"\n\n\"reply_intent\": \"\"\n\nOffer alternative available times if the tool provides them.\n\nExample:\n\n\"That time is unavailable. I can offer Monday at 4 PM or Tuesday at 2 PM.\"\n\nDo not claim anything is booked.\n\n========================\nIF AVAILABILITY IS UNCLEAR\n==========================\n\nIf Google Calendar:\n\n* returns an error\n* returns incomplete data\n* cannot determine availability\n* returns conflicting information\n\nDO NOT book.\n\nSet:\n\n\"conversation_complete\": \"no\"\n\n\"reply_intent\": \"\"\n\nDo not guess.\n\nDo not claim availability.\n\n========================\nSTART TIME\n==========\n\nFor a confirmed booking:\n\nReturn exact ISO 8601 start time.\n\nExample:\n\nCustomer:\n\n\"Monday October 5 at 3 PM UTC.\"\n\nReturn:\n\n\"2026-10-05T15:00:00Z\"\n\nFor non-bookings:\n\n\"start_time\": \"\"\n\n========================\nEND TIME\n========\n\nUse meeting duration from:\n\n1. Client Profile\n2. Outreach History\n3. Previously discussed duration\n\nIf no duration exists:\n\nUse 30 minutes.\n\nExample:\n\nStart:\n\n2026-10-05T15:00:00Z\n\nEnd:\n\n2026-10-05T15:30:00Z\n\nFor non-bookings:\n\n\"end_time\": \"\"\n\n========================\nTIMEZONE\n========\n\nPreserve the customer's timezone.\n\nExamples:\n\n3 PM UTC\n→ UTC\n\n3 PM Saudi time\n→ Asia/Riyadh\n\n3 PM Riyadh time\n→ Asia/Riyadh\n\nNever silently change the timezone.\n\nIf the timezone was established earlier in the conversation, use it.\n\nDo NOT ask for the timezone again if it is already known.\n\n========================\nNO CALENDAR EVENT CREATION\n==========================\n\nYou MUST NOT:\n\n* Create calendar events\n* Create Google Calendar events\n* Claim that an event was created\n* Claim that an invitation was sent\n* Generate a calendar link\n* Generate a Google Meet link\n* Generate a meeting link\n\nOnly CHECK AVAILABILITY.\n\nThe next n8n node creates the actual event.\n\n========================\nINTERESTED\n==========\n\nUse:\n\n\"interested\"\n\nONLY when the customer clearly wants to move forward but has not selected a specific appointment time.\n\nExample:\n\n\"We'd like to move forward.\"\n\nThen:\n\n\"conversation_complete\": \"yes\"\n\n\"reply_intent\": \"interested\"\n\nA simple question is NOT interested.\n\nExamples:\n\n\"How does this work?\"\n\n\"What services do you provide?\"\n\n\"Can you explain?\"\n\n\"How much does it cost?\"\n\nThese remain normal conversation.\n\n========================\nNOT INTERESTED\n==============\n\nUse:\n\n\"not_interested\"\n\nONLY when the customer clearly rejects the offer.\n\nExamples:\n\n\"No thanks.\"\n\n\"We aren't interested.\"\n\n\"We don't need this.\"\n\nThen:\n\n\"conversation_complete\": \"yes\"\n\n\"reply_intent\": \"not_interested\"\n\n========================\nSTOP CONTACT\n============\n\nUse:\n\n\"stop_contact\"\n\nwhen the customer explicitly requests no further contact.\n\nExamples:\n\n\"Stop contacting me.\"\n\n\"Remove me from your list.\"\n\n\"Don't email me again.\"\n\n\"Please stop.\"\n\nThen:\n\n\"conversation_complete\": \"yes\"\n\n\"reply_intent\": \"stop_contact\"\n\n========================\nNORMAL CONVERSATION\n===================\n\nFor normal ongoing conversations:\n\n\"conversation_complete\": \"no\"\n\n\"reply_intent\": \"\"\n\n\"start_time\": \"\"\n\n\"end_time\": \"\"\n\nAlways return the correct email-matched:\n\n* prospect_name\n* prospect_id\n* client_id\n* client_name\n\n========================\nNO UNNECESSARY QUESTIONS\n========================\n\nTHIS IS CRITICAL.\n\nBefore asking a question, check:\n\nIs the answer already in:\n\n* Customer message?\n* Outreach History?\n* Client Profile?\n* Prospect information?\n* Google Calendar?\n\nIf YES:\n\nDO NOT ASK.\n\nUse the information.\n\nEspecially for appointments:\n\nIf the customer has already provided or confirmed:\n\n* date\n* time\n* timezone\n\nDO NOT ASK FOR THEM AGAIN.\n\nCHECK AVAILABILITY.\n\n========================\nNO INVENTION\n============\n\nNever invent:\n\n* Prospect name\n* Prospect ID\n* Client ID\n* Client name\n* Services\n* Capabilities\n* Pricing\n* Dates\n* Times\n* Timezones\n* Availability\n* Customer information\n* Calendar events\n* Calendar links\n* Meeting links\n\n========================\nOUTPUT\n======\n\nReturn ONLY valid JSON.\n\nUse EXACTLY these fields:\n\n{\n\"prospect_name\": \"\",\n\"prospect_id\": \"\",\n\"client_id\": \"\",\n\"client_name\": \"\",\n\"conversation_complete\": \"\",\n\"reply_content\": \"\",\n\"reply_intent\": \"\",\n\"start_time\": \"\",\n\"end_time\": \"\",\n\"created_at\": \"\",\n\"updated_at\": \"\"\n}\n\nDo NOT add fields.\n\nDo NOT remove fields.\n\nDo NOT return markdown.\n\nDo NOT return explanations.\n\n========================\nOUTPUT RULES\n============\n\n`prospect_name`\n\nMust be copied from the prospect record whose email matches the current customer's email.\n\n`prospect_id`\n\nMust be copied from the SAME email-matched prospect record.\n\n`client_id`\n\nMust belong to the current client context.\n\n`client_name`\n\nMust be copied from the Client Profile.\n\n`reply_content`\n\nMust directly answer the customer.\n\n`conversation_complete`\n\nUse:\n\n\"no\"\n\nwhile conversation is still active.\n\nUse:\n\n\"yes\"\n\nonly for:\n\n* book_appointment\n* interested\n* not_interested\n* stop_contact\n\n`reply_intent`\n\nWhen conversation_complete = \"no\":\n\n\"\"\n\nWhen conversation_complete = \"yes\":\n\nOne of:\n\n\"book_appointment\"\n\n\"interested\"\n\n\"not_interested\"\n\n\"stop_contact\"\n\n`start_time`\n\nOnly populated for confirmed available bookings.\n\n`end_time`\n\nOnly populated for confirmed available bookings.\n\n========================\nBOOKING DECISION — ABSOLUTE RULE\n================================\n\nUse this exact decision tree.\n\nCUSTOMER WANTS TO BOOK\n+\nSPECIFIC DATE\n+\nSPECIFIC TIME\n↓\nCHECK AVAILABILITY IMMEDIATELY\n↓\nAVAILABLE\n↓\nconversation_complete = \"yes\"\nreply_intent = \"book_appointment\"\n↓\nSTOP ASKING QUESTIONS\n\nCUSTOMER CONFIRMS PREVIOUSLY OFFERED DATE/TIME\n↓\nCHECK AVAILABILITY IMMEDIATELY\n↓\nAVAILABLE\n↓\nconversation_complete = \"yes\"\nreply_intent = \"book_appointment\"\n↓\nSTOP ASKING QUESTIONS\n\nCUSTOMER SAYS \"BOOK IT\"\n+\nPREVIOUS MESSAGE CONTAINS SPECIFIC DATE/TIME\n↓\nUSE PREVIOUS DATE/TIME\n↓\nCHECK AVAILABILITY\n↓\nAVAILABLE\n↓\nbook_appointment\n\nCUSTOMER SAYS \"YES, THAT WORKS\"\n+\nPREVIOUS MESSAGE CONTAINS SPECIFIC DATE/TIME\n↓\nTHIS IS CONFIRMATION\n↓\nCHECK AVAILABILITY\n↓\nDO NOT ASK AGAIN\n\nCUSTOMER PROVIDES A NEW DATE/TIME\n↓\nCHECK THE NEW DATE/TIME\n\nCUSTOMER WANTS MEETING\n+\nNO SPECIFIC TIME\n↓\nDO NOT BOOK\n↓\nASK ONLY FOR THE MISSING TIME OR OFFER AVAILABLE TIMES\n\nTIME UNAVAILABLE\n↓\nDO NOT BOOK\n↓\nOFFER ALTERNATIVES\n\nAVAILABILITY UNKNOWN\n↓\nDO NOT BOOK\n↓\nDO NOT GUESS\n\n========================\nFINAL IDENTITY VALIDATION\n=========================\n\nBefore returning JSON:\n\n1. Identify current customer email.\n2. Match current customer email to Prospect database.\n3. Confirm matching prospect record.\n4. Copy exact prospect_name.\n5. Copy exact prospect_id.\n6. Retrieve Client Profile.\n7. Copy exact client_name from Client Profile.\n8. Copy correct client_id.\n\nNEVER randomly select a prospect.\n\n========================\nFINAL BOOKING VALIDATION\n========================\n\nBefore using:\n\n\"book_appointment\"\n\nALL of these must be true:\n\n1. Customer clearly wants the appointment.\n2. Specific date is known.\n3. Specific time is known.\n4. Timezone is known or established.\n5. Google Calendar CHECK AVAILABILITY was executed.\n6. Google Calendar confirmed the requested period is available.\n\nIf all six are true:\n\nBOOK.\n\nDo NOT ask another confirmation question.\n\n========================\nTIMESTAMPS\n==========\n\ncreated_at:\n\nCurrent ISO 8601 timestamp when available.\n\nupdated_at:\n\nCurrent ISO 8601 timestamp when available.\n\n========================\nFINAL PROCESS\n=============\n\nSTEP 1\n→ Get current customer email.\n\nSTEP 2\n→ Match email to Prospect database.\n\nSTEP 3\n→ Copy exact prospect_name.\n\nSTEP 4\n→ Copy exact prospect_id.\n\nSTEP 5\n→ Retrieve Client Profile.\n\nSTEP 6\n→ Copy exact client_name.\n\nSTEP 7\n→ Get correct client_id.\n\nSTEP 8\n→ Read Client Profile.\n\nSTEP 9\n→ Read Outreach History.\n\nSTEP 10\n→ Read current customer message.\n\nSTEP 11\n→ Determine customer intent.\n\nSTEP 12\n→ If clear appointment request with specific date/time, CHECK AVAILABILITY IMMEDIATELY.\n\nSTEP 13\n→ If available, output book_appointment.\n\nSTEP 14\n→ Do NOT ask unnecessary confirmation questions.\n\nSTEP 15\n→ Return exact database identity values.\n\n========================\nMANDATORY FINAL REQUIREMENT\n===========================\n\nEVERY OUTPUT MUST CONTAIN:\n\nprospect_name\nprospect_id\nclient_id\nclient_name\nconversation_complete\nreply_content\nreply_intent\nstart_time\nend_time\ncreated_at\nupdated_at\n\nMOST IMPORTANT:\n\nTHE CUSTOMER'S EMAIL IDENTIFIES THE PROSPECT.\n\nTHE CLIENT PROFILE IDENTIFIES THE CLIENT.\n\nTHE CUSTOMER'S CLEAR BOOKING REQUEST IDENTIFIES THE ACTION.\n\nIF THE CUSTOMER HAS GIVEN A SPECIFIC DATE AND TIME AND WANTS TO BOOK:\n\nDO NOT ASK AGAIN.\n\nCHECK AVAILABILITY.\n\nIF AVAILABLE:\n\nBOOK_APPOINTMENT.\n\n========================\nCURRENT CUSTOMER MESSAGE\n========================\n\n{{ $json.snippet }}\n\nCURRENT CUSTOMER EMAIL:\n\n{{ $json.From }}\n\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -4096,
+        1280
+      ],
+      "id": "61c02646-8844-4214-a02c-2bddad8623bd",
+      "name": "Email_Replying_Agent1",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json.output;\n\nlet text = \"\";\n\n// Get the AI text from the OpenAI output structure\nif (Array.isArray(input)) {\n  const first = input[0];\n\n  if (first?.content && Array.isArray(first.content)) {\n    const textPart = first.content.find(\n      item => item?.type === \"output_text\"\n    );\n\n    text = textPart?.text || \"\";\n  }\n}\n\n// Fallback if output is already a string\nif (!text && typeof input === \"string\") {\n  text = input;\n}\n\ntext = String(text).trim();\n\n// Remove markdown code fences if present\ntext = text\n  .replace(/^```json\\s*/i, \"\")\n  .replace(/^```\\s*/i, \"\")\n  .replace(/\\s*```$/i, \"\")\n  .trim();\n\nlet data;\n\ntry {\n  data = JSON.parse(text);\n} catch (error) {\n  return [\n    {\n      json: {\n        prospect_name: \"\",\n        prospect_id: \"\",\n        client_id: \"\",\n        client_name: \"\",\n        reply_content: \"\",\n        conversation_complete: \"\",\n        reply_intent: \"\",\n        start_time: \"\",\n        end_time: \"\",\n        created_at: \"\",\n        updated_at: \"\",\n        parse_error: error.message,\n        raw_output: text\n      }\n    }\n  ];\n}\n\n// Return every required value as a separate string\nreturn [\n  {\n    json: {\n      prospect_name: String(data.prospect_name || \"\"),\n      prospect_id: String(data.prospect_id || \"\"),\n      client_id: String(data.client_id || \"\"),\n      client_name: String(data.client_name || \"\"),\n      reply_content: String(data.reply_content || \"\"),\n      conversation_complete: String(data.conversation_complete || \"\"),\n      reply_intent: String(data.reply_intent || \"\"),\n      start_time: String(data.start_time || \"\"),\n      end_time: String(data.end_time || \"\"),\n      created_at: String(data.created_at || \"\"),\n      updated_at: String(data.updated_at || \"\")\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3648,
+        1280
+      ],
+      "id": "c732ef94-64bb-457c-a1f3-85fddc5d8774",
+      "name": "TEXT_SIMPLIFY1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a480fe94-61c0-42cf-b82b-553c3952e58a",
+              "leftValue": "={{ $json.conversation_complete }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3424,
+        1280
+      ],
+      "id": "cd4ab968-911c-4a77-a7c3-eb20efd727d3",
+      "name": "IF_CONVERSATION_COMPLETE1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('TEXT_SIMPLIFY1').item.json.reply_intent }}",
+                    "rightValue": "book_appointment",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "2ff14823-33e7-4cfe-adfb-8f692022d509"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Book_appointment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7fdcc023-6061-4ae5-a1d1-6cfb1f4eb810",
+                    "leftValue": "={{ $('TEXT_SIMPLIFY1').item.json.reply_intent }}",
+                    "rightValue": "stop_contact",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "not_intrested"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -3120,
+        1184
+      ],
+      "id": "6a6c535b-0b5a-4f10-9058-99cc1196354d",
+      "name": "Intrested_Not_intrested1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $('Email_Replying_Agent1').first().json.output[0].content[0].text;\n\nlet data;\n\ntry {\n  data = JSON.parse(text);\n} catch (error) {\n  throw new Error('Could not parse AI output as JSON: ' + error.message);\n}\n\nconst replyIntent = String(data.reply_intent || '');\n\nif (replyIntent !== 'book_appointment') {\n  return [{\n    json: {\n      timeMin: '',\n      timeMax: '',\n      reply_intent: replyIntent,\n      approval_status: 'interested'\n    }\n  }];\n}\n\nif (!data.start_time || !data.end_time) {\n  throw new Error('start_time or end_time is missing from AI output');\n}\n\nreturn [{\n  json: {\n    timeMin: String(data.start_time),\n    timeMax: String(data.end_time),\n    reply_intent: replyIntent,\n    approval_status: 'interested'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2784,
+        1088
+      ],
+      "id": "66b6413e-6edb-4ee4-b13d-6791f771f022",
+      "name": "Book_appointment_simplify1"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "umairimran54321@gmail.com",
+          "mode": "list",
+          "cachedResultName": "umairimran54321@gmail.com"
+        },
+        "start": "={{ $json.timeMin }}",
+        "end": "={{ $json.timeMax }}",
+        "additionalFields": {
+          "summary": "=Meeting with  {{ $('TEXT_SIMPLIFY1').item.json.prospect_name }} as prospect id {{ $('TEXT_SIMPLIFY1').item.json.prospect_id }} and client {{ $('TEXT_SIMPLIFY1').item.json.client_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -2592,
+        1072
+      ],
+      "id": "d36fa523-a109-4bb4-83c3-fa147f22cd0b",
+      "name": "Apppointment_booking1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ELEJmucS7Ywdbg71",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "umairimran54321@gmail.com",
+        "subject": "=New Online meeting booked for  {{ $('Intrested_Not_intrested1').item.json.prospect_name }}",
+        "emailType": "text",
+        "message": "=Attention please new appointment is booked from  {{ $('Intrested_Not_intrested1').item.json.prospect_name }} with prospect id {{ $('TEXT_SIMPLIFY1').item.json.prospect_id }} and calender Link: {{ $json.htmlLink }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -2368,
+        1072
+      ],
+      "id": "b8a3dd9b-146f-48e5-bde9-7690b3d1f735",
+      "name": "Notify_Client_New_Booking1",
+      "webhookId": "360559d5-0cf9-4d8e-96a4-8451a4b5f911",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "D8etc5nyKevXqRJj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger1').item.json.id }}",
+        "emailType": "text",
+        "message": "=Your meeting with  {{ $('TEXT_SIMPLIFY1').item.json.client_name }} has been booked sucessfully on {{ $('Apppointment_booking1').item.json.start.dateTime }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -2144,
+        1072
+      ],
+      "id": "ed3282ea-9de7-490c-9f78-747e3ae7850b",
+      "name": "Booking_Confirmation_to_Customer1",
+      "webhookId": "50c723a5-13b4-4957-a08a-4dcba12b96c8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "D8etc5nyKevXqRJj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "Outreach",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "prospect_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Intrested_Not_intrested1').item.json.prospect_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "approval_status",
+              "fieldValue": "={{ $('Intrested_Not_intrested1').item.json.reply_intent }}"
+            },
+            {
+              "fieldId": "reply_status",
+              "fieldValue": "="
+            },
+            {
+              "fieldId": "reply_content",
+              "fieldValue": "={{ $('Intrested_Not_intrested1').item.json.reply_content }}"
+            },
+            {
+              "fieldId": "reply_intent",
+              "fieldValue": "={{ $('Intrested_Not_intrested1').item.json.reply_intent }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $('Intrested_Not_intrested1').item.json.created_at }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $('Intrested_Not_intrested1').item.json.updated_at }}"
+            },
+            {
+              "fieldId": "appointment start time",
+              "fieldValue": "={{ $('Intrested_Not_intrested1').item.json.start_time }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1920,
+        1072
+      ],
+      "id": "7e06d0c6-85f0-4f8e-84d4-ec202447e173",
+      "name": "Update_Followup_status1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are a FAST autonomous personalized outbound follow-up email agent.\n\nYour job is to retrieve prospects from the Prospect Sheet, retrieve the client's information from the Client Profile, check previous outreach from the Outreach Sheet, and generate the correct follow-up message for eligible prospects.\n\nDo not ask questions.\nDo not ask for confirmation.\nDo not skip eligible prospects.\nDo not invent information.\n\n========================\nDATA SOURCES\n============\n\nYou have access to THREE Knowledge Sources:\n\n1. CLIENT PROFILE\n2. PROSPECT SHEET\n3. OUTREACH SHEET\n\nUse the Client Profile to understand:\n\n* Client/company name\n* Services\n* Solutions\n* Value proposition\n* Target customers\n* Business description\n* Relevant capabilities\n* Sender information\n* Any other available client information\n\nUse the Prospect Sheet to understand:\n\n* prospect_id\n* company_name\n* contact_name\n* email\n* location\n* website\n* main_services\n* business_signals\n* pain_point\n* problem\n* comparison_with_client_profile\n* recommended_solution\n* qualification_status\n* source_urls\n* Any status or interest information\n\nUse the Outreach Sheet to understand:\n\n* Previous outreach messages\n* Previous follow-up messages\n* Outreach dates\n* Follow-up dates\n* Follow-up count\n* Appointment information\n* Appointment start date/time\n* Appointment end date/time\n* Prospect status\n* Any other outreach history\n\n========================\nCRITICAL: NOT_INTERESTED\n========================\n\nBefore doing ANY follow-up work, check the Prospect Sheet and Outreach Sheet for the prospect's status.\n\nIf a prospect has a status, column, or row indicating:\n\nNOT_INTERESTED\n\nthen:\n\n* NEVER generate a message.\n* NEVER generate a follow-up.\n* NEVER fetch or use their outreach details for messaging.\n* NEVER send another message to them.\n* NEVER create another follow-up for them.\n* NEVER try to re-engage them.\n\nTreat NOT_INTERESTED as a permanent stop condition.\n\nIf the prospect is marked NOT_INTERESTED, completely exclude them from follow-up processing.\n\n========================\nAPPOINTMENT FOLLOW-UP\n=====================\n\nIMPORTANT:\n\nAlways check the OUTREACH SHEET before generating a normal follow-up.\n\nIf the Outreach Sheet shows that a prospect has an appointment, and the record contains an appointment start date/time, the follow-up must be treated as an APPOINTMENT FOLLOW-UP.\n\nFor example, if the Outreach Sheet contains:\n\nappointment_start_time:\n2026-10-10T15:00:00\n\nthen generate a message related to the upcoming appointment instead of a normal sales follow-up.\n\nThe appointment start time is the most important value.\n\n========================\nAPPOINTMENT TIME CHECK\n======================\n\nALWAYS compare:\n\nCURRENT DATE AND TIME\n\nagainst:\n\nAPPOINTMENT START DATE AND TIME\n\nbefore generating an appointment follow-up.\n\nIf:\n\nCURRENT DATE/TIME < APPOINTMENT START TIME\n\nthe appointment has NOT started yet.\n\nAn appointment follow-up may be generated.\n\nThe message should be appropriate for an upcoming appointment.\n\nExamples:\n\n* Appointment reminder\n* Confirmation/reminder\n* Preparation message\n* Brief meeting reminder\n* Relevant context from the previous conversation\n\nDo not make the message sound like a cold sales email.\n\n========================\nAPPOINTMENT ALREADY STARTED\n===========================\n\nIf:\n\nCURRENT DATE/TIME >= APPOINTMENT START TIME\n\nDO NOT generate an appointment follow-up.\n\nSTOP messaging the prospect.\n\nDo not send a reminder after the appointment start time has passed.\n\nThe appointment START TIME is the cutoff.\n\nEven if the appointment end time has not passed, do not send an appointment follow-up after the start time.\n\n========================\nCURRENT DATE AND TIME\n=====================\n\nAlways use the actual current date and time available to you.\n\nDo NOT assume the current date.\n\nDo NOT use the date from an old outreach message as the current date.\n\nDo NOT compare against the appointment end time.\n\nThe comparison must always be:\n\nCURRENT DATE/TIME\nvs\nAPPOINTMENT START TIME\n\n========================\nAPPOINTMENT FOLLOW-UP PRIORITY\n==============================\n\nThe decision order is:\n\n1. Check if prospect is NOT_INTERESTED.\n2. If NOT_INTERESTED → STOP. NEVER MESSAGE.\n3. Check Outreach Sheet for appointment information.\n4. If appointment start time exists:\n\n   * Compare current date/time with appointment start time.\n   * If appointment start time has passed → STOP. NEVER MESSAGE.\n   * If appointment start time is in the future → generate appointment follow-up.\n5. If there is no appointment → continue with normal follow-up logic.\n\n========================\nNORMAL FOLLOW-UP\n================\n\nIf there is no upcoming appointment, review the previous outreach history.\n\nUnderstand:\n\n* What was previously sent\n* When it was sent\n* What problem/solution was discussed\n* Whether the prospect responded\n* Previous follow-up count\n* Previous follow-up dates\n* Any relevant prospect status\n\nGenerate the next follow-up based on the existing conversation and outreach history.\n\nDo NOT repeat the original outreach message.\n\nDo NOT send the same follow-up repeatedly.\n\nEach follow-up should feel like a natural continuation of the previous communication.\n\n========================\nFOLLOW-UP PERSONALIZATION\n=========================\n\nUse relevant information such as:\n\n* Company name\n* Contact name\n* Industry\n* Location\n* Services\n* Business signals\n* Pain point\n* Problem\n* Recommended solution\n* Previous outreach\n* Previous follow-ups\n* Appointment information when applicable\n\nThe follow-up must be based on the actual prospect and previous communication.\n\nDo NOT create a generic follow-up and simply insert the company name.\n\n========================\nCLIENT SOLUTION\n===============\n\nUse the Client Profile as the source of truth for the client's services and capabilities.\n\nNever invent services.\n\nNever promise capabilities that are not present in the Client Profile.\n\nIf the previous outreach discussed a specific client service, continue naturally from that discussion.\n\n========================\nNO PRICING\n==========\n\nNEVER provide pricing.\n\nNEVER provide a price range.\n\nNEVER invent a price.\n\nIf pricing was discussed previously, do not create a new price.\n\nIf the prospect asks about pricing, keep the response focused on requirements, scope, or discussion without providing a price.\n\n========================\nEMAIL STYLE\n===========\n\nWrite a professional B2B follow-up email.\n\nKeep it concise.\n\nThe message should feel natural and human.\n\nAvoid:\n\n* Generic sales language\n* Excessive marketing language\n* Long paragraphs\n* Repeating the same message\n* Unrealistic promises\n* Aggressive sales language\n\nFor appointment follow-ups, prioritize the upcoming appointment rather than trying to sell again.\n\n========================\nDUPLICATE CHECK\n===============\n\nBefore generating a follow-up, review previous outreach and follow-up messages in the Outreach Sheet.\n\nDo NOT:\n\n* Copy a previous email\n* Repeat the same opening\n* Repeat the same CTA\n* Repeat the same paragraph structure\n* Repeat the same sales pitch\n\nThe new message should be a natural continuation of the conversation.\n\n========================\nMISSING INFORMATION\n===================\n\nDo not invent missing information.\n\nIf contact_name is unavailable, do not invent a name.\n\nIf previous outreach information is unavailable, use the available prospect information.\n\nIf appointment information is unavailable, do not invent an appointment.\n\nNever invent an appointment date or time.\n\n========================\nEMAIL REQUIREMENT\n=================\n\nOnly generate a follow-up for a prospect with a valid email address.\n\nIf there is no valid email:\n\nReturn:\n\n\"email_status\": \"no_email\"\n\nand do not generate an email.\n\nNever guess or invent an email address.\n\n========================\nFINAL DECISION\n==============\n\nFor EVERY prospect, follow this exact decision process:\n\nSTEP 1:\nCheck Prospect Sheet and Outreach Sheet for NOT_INTERESTED.\n\nIf NOT_INTERESTED:\nSTOP.\nNEVER MESSAGE.\n\nSTEP 2:\nCheck Outreach Sheet for appointment start date/time.\n\nSTEP 3:\nIf appointment start time exists, compare it with CURRENT DATE/TIME.\n\nIf appointment start time has passed:\nSTOP.\nNEVER MESSAGE.\n\nIf appointment start time is in the future:\nGenerate an APPOINTMENT FOLLOW-UP.\n\nSTEP 4:\nIf there is no appointment, generate a normal personalized follow-up based on outreach history.\n\n========================\nOUTPUT\n======\n\nReturn ONE JSON object for each eligible prospect.\n\nUse exactly these fields:\n\n{\n\"prospect_id\": \"\",\n\"company_name\": \"\",\n\"contact_name\": \"\",\n\"email\": \"\",\n\"email_status\": \"\",\n\"subject\": \"\",\n\"email_body\": \"\"\n}\n\nKeep the original prospect_id.\n\nKeep the original company_name.\n\nKeep the original email.\n\nDo not create or modify prospect IDs.\n\nDo not add extra fields.\n\nDo not include explanations.\n\nDo not include commentary.\n\nFor NOT_INTERESTED prospects:\nDO NOT generate a message.\n\nFor prospects whose appointment start time has already passed:\nDO NOT generate a message.\n\nFor upcoming appointments:\nGenerate an appointment-specific follow-up.\n\nFor prospects without appointments:\nGenerate the appropriate normal follow-up.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -4064,
+        784
+      ],
+      "id": "529a0883-58c7-4e98-98a9-2ad181c01877",
+      "name": "GET_QUALIFIED_LEADS_GENERATE_PERSONALIZED_EMAILS_Followup1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Outreach",
+        "returnAll": true,
+        "filters": {
+          "conditions": []
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -3952,
+        1024
+      ],
+      "id": "709ffe38-60c6-4a68-8bac-b2c7297de43c",
+      "name": "Get many rows in Supabase11",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger1').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $('TEXT_SIMPLIFY1').item.json.reply_content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -2448,
+        1344
+      ],
+      "id": "edd5ca4a-036a-41c0-bdf3-bb506a19193c",
+      "name": "Reply to a message3",
+      "webhookId": "f384ed6b-2c05-49b3-99c9-ea3d6ecf040b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "D8etc5nyKevXqRJj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      inputs: $input.all().map(item => item.json)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2400,
+        176
+      ],
+      "id": "7dae0852-e0ea-4ada-ba86-a2a0df564cd8",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "Outreach",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "outreach_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.outreach_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "email_subject",
+              "fieldValue": "={{ $('SIMPLIFY_TEXT1').item.json.subject }}"
+            },
+            {
+              "fieldId": "email_body",
+              "fieldValue": "={{ $('SIMPLIFY_TEXT1').item.json.email_body }}"
+            },
+            {
+              "fieldId": "outreach_status",
+              "fieldValue": "={{ $json.outreach_status }}"
+            },
+            {
+              "fieldId": "follow_up_date",
+              "fieldValue": "={{ $json.follow_up_date }}"
+            },
+            {
+              "fieldId": "follow_up_count",
+              "fieldValue": "={{ $json.follow_up_count }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $('SIMPLIFY_TEXT1').item.json.created_at }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $('SIMPLIFY_TEXT1').item.json.updated_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2688,
+        848
+      ],
+      "id": "a29e421f-d0b1-4b31-bc4d-15f833c6d015",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "98MpAEToLiUnFmVJ",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "AI LEAD FINDER AND QUALIFIER1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row in Supabase2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI LEAD FINDER AND QUALIFIER1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI LEAD FINDER AND QUALIFIER1": {
+      "main": [
+        [
+          {
+            "node": "Text_Simplify1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text_Simplify1": {
+      "main": [
+        [
+          {
+            "node": "CHECK_IF_QULAIFY_OR_NO1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CHECK_IF_QULAIFY_OR_NO1": {
+      "main": [
+        [
+          {
+            "node": "QUALIFIED_LEADS_ID_GENERATOR1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "UNQUALIFIED_LEADS_REVIEW1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QUALIFIED_LEAD_SAVED1": {
+      "main": [
+        [
+          {
+            "node": "OUTREACH_DATA_SAVED1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QUALIFIED_LEADS_ID_GENERATOR1": {
+      "main": [
+        [
+          {
+            "node": "QUALIFIED_LEAD_SAVED1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "GET_QUALIFIED_LEADS_GENERATE_PERSONALIZED_EMAILS_Followup1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "GET_QUALIFIED_LEADS_GENERATE_PERSONALIZED_EMAILS_Followup1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows in Supabase6": {
+      "ai_tool": [
+        [
+          {
+            "node": "GET_QUALIFIED_LEADS_GENERATE_PERSONALIZED_EMAILS_Followup1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows in Supabase7": {
+      "ai_tool": [
+        [
+          {
+            "node": "GET_QUALIFIED_LEADS_GENERATE_PERSONALIZED_EMAILS_Followup1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft1": {
+      "main": [
+        [
+          {
+            "node": "Get many rows1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SIMPLIFY_TEXT1": {
+      "main": [
+        [
+          {
+            "node": "Create a draft1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row in Supabase3": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI LEAD FINDER AND QUALIFIER1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OUTREACH_DATA_SAVED1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Email_Replying_Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows in Supabase8": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email_Replying_Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows in Supabase9": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email_Replying_Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows in Supabase10": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email_Replying_Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email_Replying_Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row3": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email_Replying_Agent1": {
+      "main": [
+        [
+          {
+            "node": "TEXT_SIMPLIFY1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TEXT_SIMPLIFY1": {
+      "main": [
+        [
+          {
+            "node": "IF_CONVERSATION_COMPLETE1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF_CONVERSATION_COMPLETE1": {
+      "main": [
+        [
+          {
+            "node": "Intrested_Not_intrested1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply to a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intrested_Not_intrested1": {
+      "main": [
+        [
+          {
+            "node": "Book_appointment_simplify1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book_appointment_simplify1": {
+      "main": [
+        [
+          {
+            "node": "Apppointment_booking1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apppointment_booking1": {
+      "main": [
+        [
+          {
+            "node": "Notify_Client_New_Booking1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify_Client_New_Booking1": {
+      "main": [
+        [
+          {
+            "node": "Booking_Confirmation_to_Customer1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking_Confirmation_to_Customer1": {
+      "main": [
+        [
+          {
+            "node": "Update_Followup_status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET_QUALIFIED_LEADS_GENERATE_PERSONALIZED_EMAILS_Followup1": {
+      "main": [
+        [
+          {
+            "node": "SIMPLIFY_TEXT1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows in Supabase11": {
+      "ai_tool": [
+        [
+          {
+            "node": "GET_QUALIFIED_LEADS_GENERATE_PERSONALIZED_EMAILS_Followup1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "QUALIFIED_LEAD_SAVED_INFORMED1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e97ec94f-1b0c-443f-a541-c73282016886",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d3a4b83f3ddd781dfd1bde4132f10e1288df1f6959493947bae496c2977e0a58"
+  },
+  "nodeGroups": [],
+  "id": "hCFGdsci9YCnKk9H",
+  "tags": []
+}
